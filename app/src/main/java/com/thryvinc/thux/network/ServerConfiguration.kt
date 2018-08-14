@@ -1,6 +1,6 @@
 package com.thryvinc.thux.network
 
-class ServerConfiguration(val scheme: String = "https",
+open class ServerConfiguration(val scheme: String = "https",
                           val host: String,
                           val apiBaseRoute: String = "api/v1",
                           val shouldStub: Boolean) {

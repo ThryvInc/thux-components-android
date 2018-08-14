@@ -2,7 +2,6 @@ package com.thryvinc.thux
 
 import com.android.volley.VolleyError
 import com.google.gson.Gson
-import com.thryvinc.thux.models.Environment
 import com.thryvinc.thux.network.*
 import org.junit.Assert
 import org.junit.Test
@@ -13,13 +12,15 @@ class VolleyNetworkCallTests {
     var errorListener: (VolleyError?) -> Unit = {}
 
     fun setup() {
-        Environment.current.serverConfiguration = ServerConfiguration(host = "localhost", shouldStub = true)
+        VolleyManager.shouldStub = { it.stubHolder != null }
     }
 
     fun simpleNetworkCall(stubHolder: StubHolderInterface): NetworkCall<Human> {
         setup()
 
-        val call = NetworkCall<Human>(endpoint = "endpoint", parseResponseString = Gson()::fromJsonString, listener = successListener, errorListener = errorListener, stubHolder = stubHolder)
+        val call = NetworkCall<Human>(serverConfiguration = ServerConfiguration(host = "localhost", shouldStub = true),
+                endpoint = "endpoint", parseResponseString = Gson()::fromJsonString,
+                listener = successListener, errorListener = errorListener, stubHolder = stubHolder)
 
         return call
     }

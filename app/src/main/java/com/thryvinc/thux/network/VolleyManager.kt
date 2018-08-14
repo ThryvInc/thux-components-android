@@ -4,11 +4,11 @@ import android.content.Context
 import com.android.volley.Request
 import com.android.volley.RequestQueue
 import com.android.volley.toolbox.Volley
-import com.thryvinc.thux.models.Environment
 
 open class VolleyManager {
     companion object {
         private var queue: RequestQueue? = null
+        var shouldStub: (FunctionalJsonRequest<*>) -> Boolean = { false }
 
         fun init(context: Context) {
             if (queue == null) queue = Volley.newRequestQueue(context)
@@ -16,7 +16,7 @@ open class VolleyManager {
 
         fun <T> addToQueue(request: Request<T>) {
             if (request is FunctionalJsonRequest<*>) {
-                if (request.stubHolder != null && Environment.current.serverConfiguration?.shouldStub == true) {
+                if (shouldStub(request)) {
                     stubRequest(request)
                     return
                 }

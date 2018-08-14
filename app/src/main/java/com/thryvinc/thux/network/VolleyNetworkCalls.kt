@@ -3,19 +3,43 @@ package com.thryvinc.thux.network
 import com.android.volley.*
 import com.android.volley.toolbox.HttpHeaderParser
 import com.android.volley.toolbox.JsonRequest
+import com.cesarferreira.pluralize.pluralize
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.thryvinc.thux.*
-import com.thryvinc.thux.models.Environment
 import com.thryvinc.thux.models.SessionManager
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.UnsupportedEncodingException
+import java.lang.reflect.Type
 
 fun jsonObjectFromString(string: String): JSONObject = JSONObject(string)
 fun jsonArrayFromString(string: String): JSONArray = JSONArray(string)
 inline fun <reified T> Gson.fromJsonString(json: String): T? = this.fromJson<T>(json, object: TypeToken<T>() {}.type)
+
+inline fun <reified T> responseToModel(string: String, gson: Gson = Gson()) = JSONObject(string).getModel<T>(gson)
+inline fun <reified T> JSONObject.getModel(gson: Gson): T? {
+    val key = (T::class.java).simpleName.toLowerCase()
+    val stringValue = this[key]?.toString()
+    if (stringValue != null) {
+        return stringValue into gson::fromJsonString
+    } else {
+        return null
+    }
+}
+
+inline fun <reified T> responseToModels(string: String, gson: Gson = Gson(), type: Type? = null) = JSONObject(string).getModels<T>(gson, type)
+inline fun <reified T> JSONObject.getModels(gson: Gson, type: Type? = null): ArrayList<T>? {
+    val key = (T::class.java).simpleName.toLowerCase().pluralize()
+    val stringValue = this[key]?.toString()
+    if (stringValue != null) {
+        val typeToken = type ?: object: TypeToken<ArrayList<T>>() {}.type
+        return gson.fromJson(stringValue, typeToken)
+    } else {
+        return null
+    }
+}
 
 open class FunctionalJsonRequest<T>(method: Int = Method.GET,
                                     url: String,
@@ -56,7 +80,7 @@ open class FunctionalJsonRequest<T>(method: Int = Method.GET,
     }
 }
 
-open class NetworkCall<T>(val serverConfiguration: ServerConfiguration? = Environment.current.serverConfiguration,
+open class NetworkCall<T>(val serverConfiguration: ServerConfiguration?,
                           open val method: Int = Request.Method.GET,
                           open val endpoint: String,
                           open var stringBody: String? = null,
@@ -90,7 +114,8 @@ open class NetworkCall<T>(val serverConfiguration: ServerConfiguration? = Enviro
     }
 }
 
-open class CredsLoginCall<T>(serverConfiguration: ServerConfiguration,endpoint: String = "sessions",
+open class CredsLoginCall<T>(serverConfiguration: ServerConfiguration?,
+                             endpoint: String = "sessions",
                              val wrapKey: String? = "user",
                              val usernameKey: String? = "username",
                              val passwordKey: String? = "password",
@@ -123,7 +148,7 @@ open class CredsLoginCall<T>(serverConfiguration: ServerConfiguration,endpoint: 
     }
 }
 
-open class AuthenticatedCall<T>(serverConfiguration: ServerConfiguration,
+open class AuthenticatedCall<T>(serverConfiguration: ServerConfiguration?,
                                 method: Int = Request.Method.GET,
                                 endpoint: String,
                                 stringBody: String? = null,
@@ -143,7 +168,22 @@ open class AuthenticatedCall<T>(serverConfiguration: ServerConfiguration,
         set(_) {}
 }
 
-open class UrlParameteredCall<T>(serverConfiguration: ServerConfiguration,
+open class IndexCall<T>(serverConfiguration: ServerConfiguration?,
+                        endpoint: String,
+                        parseResponse: (String) -> List<T>?,
+                        listener: (List<T>?) -> Unit,
+                        errorListener: (VolleyError?) -> Unit,
+                        stubHolder: StubHolderInterface):
+        AuthenticatedCall<List<T>>(
+                serverConfiguration = serverConfiguration,
+                endpoint = endpoint,
+                parseResponse = parseResponse,
+                listener = listener,
+                errorListener = errorListener,
+                stubHolder = stubHolder
+        )
+
+open class UrlParameteredCall<T>(serverConfiguration: ServerConfiguration?,
                            method: Int = Request.Method.GET,
                            endpoint: String,
                            stringBody: String? = null,
@@ -175,7 +215,7 @@ open class UrlParameteredCall<T>(serverConfiguration: ServerConfiguration,
     }
 }
 
-open class PagedCall<T>(serverConfiguration: ServerConfiguration,
+open class PagedCall<T>(serverConfiguration: ServerConfiguration?,
                         endpoint: String,
                         stringBody: String? = null,
                         parseResponse: (String) -> T?,
