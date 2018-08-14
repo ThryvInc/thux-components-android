@@ -238,3 +238,18 @@ open class PagedCall<T>(serverConfiguration: ServerConfiguration?,
         return super.addUrlParamsToUrl(params, url)
     }
 }
+
+open class PagedIndexCall<T>(serverConfiguration: ServerConfiguration?,
+                        endpoint: String,
+                        parseResponse: (String) -> List<T>?,
+                        listener: (List<T>?) -> Unit,
+                        errorListener: (VolleyError?) -> Unit,
+                        stubHolder: StubHolderInterface):
+        PagedCall<List<T>>(
+                serverConfiguration = serverConfiguration,
+                endpoint = endpoint,
+                parseResponse = parseResponse,
+                listener = listener,
+                errorListener = errorListener,
+                stubHolder = stubHolder
+        )
