@@ -16,6 +16,34 @@ inline infix fun <T, U, V> U.intoSecond(crossinline f: (T, U) -> V): (T) -> V {
     return { f(it, this) }
 }
 
+inline infix fun <T> ((T) -> Unit).injectAfter(crossinline f: (T) -> Unit): (T) -> Unit {
+    return {
+        f(it)
+        this(it)
+    }
+}
+
+inline infix fun <T> ((T) -> Unit).injectBefore(crossinline f: (T) -> Unit): (T) -> Unit {
+    return {
+        this(it)
+        f(it)
+    }
+}
+
+inline infix fun <T> ((T) -> Unit).injectAfter(crossinline f: () -> Unit): (T) -> Unit {
+    return {
+        f()
+        this(it)
+    }
+}
+
+inline infix fun <T> ((T) -> Unit).injectBefore(crossinline f: () -> Unit): (T) -> Unit {
+    return {
+        this(it)
+        f()
+    }
+}
+
 fun <T, U> map(array: List<T>, f: (T) -> U): List<U> {
     return array.map(f)
 }

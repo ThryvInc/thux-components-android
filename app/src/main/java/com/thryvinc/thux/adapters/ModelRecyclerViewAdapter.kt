@@ -31,7 +31,9 @@ open class ModelRecyclerViewAdapter(var itemViewModels: List<RecyclerItemViewMod
     }
 }
 
-open class OnBoundModelRecyclerViewAdapter(itemViewModels: List<RecyclerItemViewModel<*>>): ModelRecyclerViewAdapter(itemViewModels), OnBoundProvider {
+abstract class OnBoundAdapter(itemViewModels: List<RecyclerItemViewModelInterface>): ModelRecyclerViewAdapter(itemViewModels), OnBoundProvider
+
+open class OnBoundModelRecyclerViewAdapter(itemViewModels: List<RecyclerItemViewModelInterface>): OnBoundAdapter(itemViewModels) {
     var _onBound: ((Int, Int) -> Unit)? = null
     override var onBound: ((Int, Int) -> Unit)?
         get() = _onBound

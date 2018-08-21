@@ -87,7 +87,7 @@ open class NetworkCall<T>(val serverConfiguration: ServerConfiguration?,
                           open var parseResponseString: (String) -> T? = ::toNull,
                           open var listener: (T?) -> Unit = ::doNothing,
                           open var errorListener: (VolleyError) -> Unit,
-                          open val stubHolder: StubHolderInterface? = null) {
+                          open var stubHolder: StubHolderInterface? = null) {
     open var url: (String) -> String = { it into ::urlWithServerConfiguration }
     open var applyHeaders: (MutableMap<String, String>) -> MutableMap<String, String> = identity()
 
@@ -173,7 +173,7 @@ open class IndexCall<T>(serverConfiguration: ServerConfiguration?,
                         parseResponse: (String) -> List<T>?,
                         listener: (List<T>?) -> Unit,
                         errorListener: (VolleyError?) -> Unit,
-                        stubHolder: StubHolderInterface):
+                        stubHolder: StubHolderInterface? = null):
         AuthenticatedCall<List<T>>(
                 serverConfiguration = serverConfiguration,
                 endpoint = endpoint,
@@ -184,17 +184,45 @@ open class IndexCall<T>(serverConfiguration: ServerConfiguration?,
         )
 
 open class UrlParameteredCall<T>(serverConfiguration: ServerConfiguration?,
-                           method: Int = Request.Method.GET,
-                           endpoint: String,
-                           stringBody: String? = null,
-                           parseResponse: (String) -> T?,
-                           listener: (T?) -> Unit,
-                           errorListener: (VolleyError) -> Unit,
-                           stubHolder: StubHolderInterface? = null):
+                                 method: Int = Request.Method.GET,
+                                 endpoint: String,
+                                 stringBody: String? = null,
+                                 parseResponse: (String) -> T?,
+                                 listener: (T?) -> Unit,
+                                 errorListener: (VolleyError?) -> Unit,
+                                 stubHolder: StubHolderInterface? = null):
         AuthenticatedCall<T>(serverConfiguration,
                 method,
                 endpoint,
                 stringBody,
+                parseResponse,
+                listener,
+                errorListener,
+                stubHolder) {
+    open var urlParams: MutableMap<String, String> = HashMap()
+    override var url: (String) -> String
+        get() = super.url o (urlParams intoFirst ::addUrlParamsToUrl)
+        set(_) {}
+
+    open fun addUrlParamsToUrl(params: MutableMap<String, String>, url: String): String {
+        return "$url?${params into ::paramsString}"
+    }
+
+    companion object {
+        fun paramsString(params: Map<String, String>): String {
+            return params.keys.map { "$it=${params[it]}" }.joinToString(separator = "&")
+        }
+    }
+}
+
+open class UrlParameteredIndexCall<T>(serverConfiguration: ServerConfiguration?,
+                                      endpoint: String,
+                                      parseResponse: (String) -> List<T>?,
+                                      listener: (List<T>?) -> Unit,
+                                      errorListener: (VolleyError?) -> Unit,
+                                      stubHolder: StubHolderInterface? = null):
+        IndexCall<T>(serverConfiguration,
+                endpoint,
                 parseResponse,
                 listener,
                 errorListener,
@@ -220,7 +248,7 @@ open class PagedCall<T>(serverConfiguration: ServerConfiguration?,
                         stringBody: String? = null,
                         parseResponse: (String) -> T?,
                         listener: (T?) -> Unit,
-                        errorListener: (VolleyError) -> Unit,
+                        errorListener: (VolleyError?) -> Unit,
                         stubHolder: StubHolderInterface? = null):
         UrlParameteredCall<T>(serverConfiguration,
                 Request.Method.GET,
@@ -240,11 +268,11 @@ open class PagedCall<T>(serverConfiguration: ServerConfiguration?,
 }
 
 open class PagedIndexCall<T>(serverConfiguration: ServerConfiguration?,
-                        endpoint: String,
-                        parseResponse: (String) -> List<T>?,
-                        listener: (List<T>?) -> Unit,
-                        errorListener: (VolleyError?) -> Unit,
-                        stubHolder: StubHolderInterface):
+                             endpoint: String,
+                             parseResponse: (String) -> List<T>?,
+                             listener: (List<T>?) -> Unit,
+                             errorListener: (VolleyError?) -> Unit,
+                             stubHolder: StubHolderInterface?):
         PagedCall<List<T>>(
                 serverConfiguration = serverConfiguration,
                 endpoint = endpoint,

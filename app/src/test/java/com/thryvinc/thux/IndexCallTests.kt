@@ -38,7 +38,7 @@ class IndexCallTests {
 class GetHumansCall(listener: (List<Human>?) -> Unit,
                     errorListener: (VolleyError?) -> Unit,
                     stubHolder: StubHolderInterface):
-        IndexCall<Human>(ServerConfiguration(host = "localhost", shouldStub = true),
+        UrlParameteredIndexCall<Human>(ServerConfiguration(host = "localhost", shouldStub = true),
                 endpoint = "endpoint",
                 parseResponse = { responseToModels(it, type = object: TypeToken<List<Human>>() {}.type) },
                 listener = listener,
